@@ -82,7 +82,51 @@ public class ClienteFrame extends JFrame implements Runnable {
 			try {
 
 				String resp = jenkins.escuchar(textField.getText());
+				
+				if (resp.contains("&9gag&:")) {
 
+					String http = resp.substring(7);
+					StyleConstants.setForeground(sas, Color.RED);
+					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
+							"\n" + nick + ": ", sas);
+					StyleConstants.setForeground(sas, Color.black);
+					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
+							textField.getText() + "\n", sas);
+
+					textField.setText("");
+					if (http.equals("&not&")) {
+
+						StyleConstants.setForeground(sas, Color.green);
+						textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
+								"\njenkins: ", sas);
+						StyleConstants.setForeground(sas, Color.black);
+
+						textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),nick+
+								" lo siento, no pude encontrar el gif solicitado\n", sas);
+						return;
+					}
+
+					try {
+
+						URL url = new URL(http);
+
+						ImageIcon mem = new ImageIcon(url);
+						textPane.setCaretPosition(textPane.getStyledDocument().getLength());
+						JLabel gif = new JLabel();
+						gif.setSize(300, 200);
+						gif.setIcon(mem);
+						textPane.insertComponent(gif);
+						textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(), "\n", sas);
+
+						return;
+					} catch (Exception e9) {
+						System.out.println("no");
+						return;
+					}
+
+				}
+
+				
 				if (resp.contains("&gif&:")) {
 
 					String http = resp.substring(6);
