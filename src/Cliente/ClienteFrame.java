@@ -137,7 +137,8 @@ public class ClienteFrame extends JFrame implements Runnable {
 
 					Image im = mem.getImage().getScaledInstance(300, 200, Image.SCALE_SMOOTH);
 					mem = (new ImageIcon(im));
-
+					textPane.setCaretPosition(textPane.getStyledDocument().getLength());
+					
 					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(), "\n", sas);
 					textPane.insertIcon(mem);
 					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(), "\n\n", sas);
