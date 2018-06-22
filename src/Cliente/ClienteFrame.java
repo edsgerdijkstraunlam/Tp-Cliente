@@ -80,29 +80,30 @@ public class ClienteFrame extends JFrame implements Runnable {
 		if (radioBtn.isSelected()) {
 
 			try {
-
 				String resp = jenkins.escuchar(textField.getText());
-				
-				if (resp.contains("&9gag&:")) {
+				StyleConstants.setForeground(sas, Color.RED);
+
+				textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
+						("\n" + nick + ": "), sas);
+				StyleConstants.setForeground(sas, Color.black);
+
+				textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
+						(textField.getText() + "\n\n"), sas);
+
+				StyleConstants.setForeground(sas, Color.green);
+
+				textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(), "Jenkins: ", sas);
+				StyleConstants.setForeground(sas, Color.black);
+
+				textField.setText("");
+				if (resp.contains("&9gag&:") || resp.contains("&gif_&:")) {
 
 					String http = resp.substring(7);
-					StyleConstants.setForeground(sas, Color.RED);
-					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
-							"\n" + nick + ": ", sas);
-					StyleConstants.setForeground(sas, Color.black);
-					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
-							textField.getText() + "\n", sas);
 
-					textField.setText("");
 					if (http.equals("&not&")) {
 
-						StyleConstants.setForeground(sas, Color.green);
 						textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
-								"\njenkins: ", sas);
-						StyleConstants.setForeground(sas, Color.black);
-
-						textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),nick+
-								" lo siento, no pude encontrar el gif solicitado\n", sas);
+								"@" + nick + " lo siento, no pude encontrar el elemento solicitado\n", sas);
 						return;
 					}
 
@@ -111,55 +112,14 @@ public class ClienteFrame extends JFrame implements Runnable {
 						URL url = new URL(http);
 
 						ImageIcon mem = new ImageIcon(url);
+						if (resp.contains("&9gag&:"))
+							mem = (new ImageIcon(mem.getImage().getScaledInstance(350, 250, Image.SCALE_SMOOTH)));
 						textPane.setCaretPosition(textPane.getStyledDocument().getLength());
-						JLabel gif = new JLabel();
-						gif.setSize(300, 200);
-						gif.setIcon(mem);
-						textPane.insertComponent(gif);
+						JLabel elemento = new JLabel();
+						elemento.setSize(300, 200);
+						elemento.setIcon(mem);
 						textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(), "\n", sas);
-
-						return;
-					} catch (Exception e9) {
-						System.out.println("no");
-						return;
-					}
-
-				}
-
-				
-				if (resp.contains("&gif&:")) {
-
-					String http = resp.substring(6);
-					StyleConstants.setForeground(sas, Color.RED);
-					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
-							"\n" + nick + ": ", sas);
-					StyleConstants.setForeground(sas, Color.black);
-					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
-							textField.getText() + "\n", sas);
-
-					textField.setText("");
-					if (http.equals("&not&")) {
-
-						StyleConstants.setForeground(sas, Color.green);
-						textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
-								"\njenkins: ", sas);
-						StyleConstants.setForeground(sas, Color.black);
-
-						textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),nick+
-								" lo siento, no pude encontrar el gif solicitado\n", sas);
-						return;
-					}
-
-					try {
-
-						URL url = new URL(http);
-
-						ImageIcon mem = new ImageIcon(url);
-						textPane.setCaretPosition(textPane.getStyledDocument().getLength());
-						JLabel gif = new JLabel();
-						gif.setSize(300, 200);
-						gif.setIcon(mem);
-						textPane.insertComponent(gif);
+						textPane.insertComponent(elemento);
 						textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(), "\n", sas);
 
 						return;
@@ -178,37 +138,15 @@ public class ClienteFrame extends JFrame implements Runnable {
 					Image im = mem.getImage().getScaledInstance(300, 200, Image.SCALE_SMOOTH);
 					mem = (new ImageIcon(im));
 
-					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
-							"\n" + jenkins.getUsuario() + ": ", sas);
-					StyleConstants.setForeground(sas, Color.black);
-					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
-							textField.getText() + "\n\n", sas);
-
+					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(), "\n", sas);
 					textPane.insertIcon(mem);
-
 					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(), "\n\n", sas);
 
 					textField.setText("");
 					return;
 				}
-
-				textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
-						("\n" + nick + ": "), sas);
-				StyleConstants.setForeground(sas, Color.black);
-
-				textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
-						(textField.getText() + "\n\n"), sas);
-
-				StyleConstants.setForeground(sas, Color.green);
-
-				textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(), "Jenkins: ", sas);
-				StyleConstants.setForeground(sas, Color.black);
-
 				textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(), resp + "\n", sas);
 
-				// textArea.append(nick + ": " + textField.getText() + "\n\n" + "Jenkins: "
-				// + jenkins.escuchar(textField.getText()) + "\n\n");
-				textField.setText("");
 			} catch (BadLocationException e) {
 			}
 
@@ -216,39 +154,6 @@ public class ClienteFrame extends JFrame implements Runnable {
 
 		else {
 
-			/*
-			 * if (textField.getText().equals("aaa")) { try {
-			 * 
-			 * URL url = new URL("https://i.giphy.com/media/jUwpNzg9IcyrK/200.gif"); // URL
-			 * url = new URL("https://i.giphy.com/media/5MieXUz58ErOo/200.gif");
-			 * 
-			 * ImageIcon mem= new ImageIcon(url);
-			 * 
-			 * //Image aa = ImageIO.read(url); //ImageIcon mem = new ImageIcon(aa);
-			 * textPane.setCaretPosition(textPane.getStyledDocument().getLength()); // mem =
-			 * new ImageIcon("Utilitarias//Imagenes//aaa.gif"); JLabel gif = new JLabel();
-			 * gif.setSize(300, 200); gif.setIcon(mem); //mem.setImageObserver(gif);
-			 * textPane.insertComponent(gif);
-			 * 
-			 * 
-			 * textPane.getStyledDocument().insertString(textPane.getStyledDocument().
-			 * getLength(), "\n", sas);
-			 * 
-			 * 
-			 * 
-			 * // gif.setIcon(mem);
-			 * 
-			 * // mem.setImageObserver(gif); // textPane.insertComponent(gif);
-			 * 
-			 * // Image im = mem.getImage().getScaledInstance(300, 200, Image.SCALE_SMOOTH);
-			 * 
-			 * // mem=(new ImageIcon(im));
-			 * 
-			 * return; } catch (Exception e9) { System.out.println("no"); return; } //
-			 * iconoLabel.setIcon(new //
-			 * ImageIcon(image.getScaledInstance(iconoLabel.getWidth(), //
-			 * iconoLabel.getHeight(), Image.SCALE_SMOOTH))); }
-			 */
 			try {
 
 				cliente = new Socket(ip, puerto);// Trata de conctarse al servidor
