@@ -22,10 +22,14 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.lang.reflect.Field;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URI;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.awt.Color;
+import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
@@ -36,6 +40,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 
 @SuppressWarnings("serial")
 public class ClienteFrame extends JFrame implements Runnable {
@@ -96,6 +101,102 @@ public class ClienteFrame extends JFrame implements Runnable {
 				StyleConstants.setForeground(sas, Color.black);
 
 				textField.setText("");
+
+				if (resp.contains("&wiki&")) {
+
+					boolean wiki = false;
+
+					String direccion;
+
+					JLabel enlace = new JLabel();
+					int tamDigDir;
+					int tamDir;
+					enlace.setBackground(Color.white);
+					enlace.setForeground(Color.blue);
+
+					if (resp.substring(6, 11).equals("&not&")) {
+
+						tamDigDir = resp.split("&")[4].length();
+						tamDir = Integer.parseInt(resp.split("&")[4]);
+						direccion = resp.substring(12 + tamDigDir, 12 + tamDigDir + tamDir);
+						// enlace.setText("Google");
+					}
+
+					else {
+
+						tamDigDir = resp.split("&")[2].length();
+						tamDir = Integer.parseInt(resp.split("&")[2]);
+						direccion = resp.substring(7 + tamDigDir, 7 + tamDigDir + tamDir);
+						wiki = true;
+						// enlace.setText("Wikipedia");
+
+					}
+
+					// enlace.setText("<html><a
+					// href=\"http://www.google.com/\">Wikipedia</a></html>");
+
+					// enlace.setToolTipText(direccion);
+					enlace.setText(direccion);
+
+					enlace.addMouseListener(new MouseListener() {
+
+						@Override
+						public void mouseClicked(MouseEvent e) {
+
+							try {
+								if (Desktop.isDesktopSupported()) {
+									Desktop desktop = Desktop.getDesktop();
+									if (desktop.isSupported(Desktop.Action.BROWSE))
+										desktop.browse(new URI(direccion));
+
+								}
+							} catch (Exception ee) {
+							}
+							;
+						}
+
+						@Override
+						public void mouseEntered(MouseEvent e) {
+							enlace.setForeground(Color.red);
+						}
+
+						@Override
+						public void mouseExited(MouseEvent e) {
+
+							enlace.setForeground(Color.blue);
+
+						}
+
+						@Override
+						public void mousePressed(MouseEvent e) {
+
+						}
+
+						@Override
+						public void mouseReleased(MouseEvent e) {
+
+						}
+
+					});
+
+					textPane.insertComponent(enlace);
+					textPane.setCaretPosition(textPane.getStyledDocument().getLength());
+					if (wiki) {
+						textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
+								"\n\n" + resp.substring(7 + tamDigDir + tamDir) + "\n\n", sas);
+
+						wiki = false;
+					} else {
+						textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
+								"\nLo siento " + jenkins.getUsuario()
+										+ ", no encontre resultados en wikipedia, aqui tienes un enlace a Google que puede ayudarte\n\n",
+								sas);
+
+					}
+					return;
+
+				}
+
 				if (resp.contains("&9gag&:") || resp.contains("&gif_&:")) {
 
 					String http = resp.substring(7);
@@ -138,7 +239,7 @@ public class ClienteFrame extends JFrame implements Runnable {
 					Image im = mem.getImage().getScaledInstance(300, 200, Image.SCALE_SMOOTH);
 					mem = (new ImageIcon(im));
 					textPane.setCaretPosition(textPane.getStyledDocument().getLength());
-					
+
 					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(), "\n", sas);
 					textPane.insertIcon(mem);
 					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(), "\n\n", sas);
@@ -206,6 +307,17 @@ public class ClienteFrame extends JFrame implements Runnable {
 	public ClienteFrame() {
 
 		System.setProperty("java.net.useSystemProxies", "true");
+		System.setProperty("file.encoding", "UTF-8");
+		Field charset;
+		try {
+			charset = Charset.class.getDeclaredField("defaultCharset");
+
+			charset.setAccessible(true);
+			charset.set(null, null);
+
+		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e1) {
+
+		}
 		// Se Inicia el Hilo que estara corriendo todo el tiempo para revisar si se
 		// reciben mensajes
 
@@ -304,6 +416,16 @@ public class ClienteFrame extends JFrame implements Runnable {
 			}
 		});
 		radioBtn.setBounds(247, 50, 80, 20);
+		/////////////////////////////////////
+
+		// PREPARADO PARA ASISTENTE//
+
+		radioBtn.setSelected(true);
+		textField2.setBackground(Color.red);
+		textField2.setText("Jenkins");
+
+		/////////////////////////////////////
+		textField2.setEnabled(false);
 		contentPane.add(radioBtn);
 
 		imagenDeFondo = new JLabel();
