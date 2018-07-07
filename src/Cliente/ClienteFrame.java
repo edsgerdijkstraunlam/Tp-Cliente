@@ -9,7 +9,7 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 
-import asistente.Asistente;
+import edsger_dijkstra_unlam.asistente.asistente.Asistente;
 
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
@@ -29,6 +29,7 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Image;
@@ -85,6 +86,24 @@ public class ClienteFrame extends JFrame implements Runnable {
 		if (radioBtn.isSelected()) {
 
 			try {
+				
+				
+				
+				
+				
+				
+			
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
 				String resp = jenkins.escuchar(textField.getText());
 				StyleConstants.setForeground(sas, Color.RED);
 
@@ -102,6 +121,47 @@ public class ClienteFrame extends JFrame implements Runnable {
 
 				textField.setText("");
 
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				if(resp.length()>5 &&resp.substring(0,6).equals("&yout&")) {
+
+					String enlace=resp.substring(6);
+
+					JPanel jPanel1= new JPanel();
+					//JFXPanel jPanel1= new JFXPanel();
+				//	jPanel1.setBounds(0, 0, 50, 50);
+					SwingBrowser browser = new SwingBrowser();
+					
+					//browser.loadURL("https://www.youtube.com/embed/YKevgUmzEp4");
+					browser.loadURL(enlace);
+					
+					//browser.setBounds(1, 1, 10, 10);
+					jPanel1.add(browser);
+					textPane.setCaretPosition(textPane.getStyledDocument().getLength());
+					textPane.insertComponent(browser);
+					textPane.setCaretPosition(textPane.getStyledDocument().getLength());
+					
+					
+					return;
+				}
+				
+				
+				
+				
+				
+				
 				if (resp.contains("&wiki&")) {
 
 					boolean wiki = false;
@@ -137,7 +197,8 @@ public class ClienteFrame extends JFrame implements Runnable {
 
 					// enlace.setToolTipText(direccion);
 					enlace.setText(direccion);
-
+					
+					enlace.setCursor(new Cursor(Cursor.HAND_CURSOR));
 					enlace.addMouseListener(new MouseListener() {
 
 						@Override
@@ -157,6 +218,7 @@ public class ClienteFrame extends JFrame implements Runnable {
 
 						@Override
 						public void mouseEntered(MouseEvent e) {
+							
 							enlace.setForeground(Color.red);
 						}
 
@@ -361,6 +423,7 @@ public class ClienteFrame extends JFrame implements Runnable {
 			}
 
 		});
+		btnEnviar.setCursor(new Cursor(Cursor.HAND_CURSOR));
 		btnEnviar.setBounds(161, 106, 89, 23);
 		contentPane.add(btnEnviar);
 		textField.addKeyListener(new KeyAdapter() {
