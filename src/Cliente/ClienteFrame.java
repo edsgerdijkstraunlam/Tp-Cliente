@@ -9,8 +9,9 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 
+import dijkstra_paqueteEnvio.PaqueteEnvio;
 import edsger_dijkstra_unlam.asistente.asistente.Asistente;
-
+//import dijkstra_paqueteEnvio;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.ImageIcon;
@@ -18,11 +19,11 @@ import javax.swing.JButton;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
@@ -51,12 +52,14 @@ public class ClienteFrame extends JFrame implements Runnable {
 	private JTextField textField;
 
 	private JTextField textField2;
+	PaqueteEnvio paquete;
 	Socket cliente; // Prepara un puente para conectarse a un serverSocket
 	ServerSocket servidor_cliente; // Prepara un cliente para que se conecten otros Sockets(en este caso solo se va
 									// a conectar el servidor cuando le retransmita el mensaje)
 	int puerto = 9998; // Puerto para que se conecten
 	int puerto2 = 9996;
-	String ip = "10.11.4.22"; // Ip del servidor
+	int puertoParaConexiones = 9990;
+	String ip = "localhost"; // Ip del servidor
 	ObjectOutputStream salida;
 	BufferedReader entrada, teclado; // Flujo de datos de entrada
 	String nick;
@@ -73,9 +76,9 @@ public class ClienteFrame extends JFrame implements Runnable {
 	public void send() { // Metodo que se ejecuta al presionar el boton enviar (o enter en el campo de
 							// mensaje)
 		StyleConstants.setForeground(sas, Color.red);
-		String ipCliente = textField2.getText(); // Se obtiene la ip de destino y se
+		// Se obtiene la ip de destino y se
 		// guarda en ipCliente
-		String cadena = ipCliente + "&" + textField.getText() + "&" + nick; // Se concatena la ip
+		String cadena = textField.getText(); // Se concatena la ip
 		// con el mensaje separandolas con '&' y se guarda en cadena
 
 		/*
@@ -86,24 +89,7 @@ public class ClienteFrame extends JFrame implements Runnable {
 		if (radioBtn.isSelected()) {
 
 			try {
-				
-				
-				
-				
-				
-				
-			
-				
-				
-				
-				
-				
-				
-				
-				
-				
-				
-				
+
 				String resp = jenkins.escuchar(textField.getText());
 				StyleConstants.setForeground(sas, Color.RED);
 
@@ -121,47 +107,27 @@ public class ClienteFrame extends JFrame implements Runnable {
 
 				textField.setText("");
 
-				
-				
-				
-				
-				
-				
-				
-				
-				
-				
-				
-				
-				
-				
-				if(resp.length()>5 &&resp.substring(0,6).equals("&yout&")) {
+				if (resp.length() > 5 && resp.substring(0, 6).equals("&yout&")) {
 
-					String enlace=resp.substring(6);
+					String enlace = resp.substring(6);
 
-					JPanel jPanel1= new JPanel();
-					//JFXPanel jPanel1= new JFXPanel();
-				//	jPanel1.setBounds(0, 0, 50, 50);
+					JPanel jPanel1 = new JPanel();
+					// JFXPanel jPanel1= new JFXPanel();
+					// jPanel1.setBounds(0, 0, 50, 50);
 					SwingBrowser browser = new SwingBrowser();
-					
-					//browser.loadURL("https://www.youtube.com/embed/YKevgUmzEp4");
+
+					// browser.loadURL("https://www.youtube.com/embed/YKevgUmzEp4");
 					browser.loadURL(enlace);
-					
-					//browser.setBounds(1, 1, 10, 10);
+
+					// browser.setBounds(1, 1, 10, 10);
 					jPanel1.add(browser);
 					textPane.setCaretPosition(textPane.getStyledDocument().getLength());
 					textPane.insertComponent(browser);
 					textPane.setCaretPosition(textPane.getStyledDocument().getLength());
-					
-					
+
 					return;
 				}
-				
-				
-				
-				
-				
-				
+
 				if (resp.contains("&wiki&")) {
 
 					boolean wiki = false;
@@ -197,7 +163,7 @@ public class ClienteFrame extends JFrame implements Runnable {
 
 					// enlace.setToolTipText(direccion);
 					enlace.setText(direccion);
-					
+
 					enlace.setCursor(new Cursor(Cursor.HAND_CURSOR));
 					enlace.addMouseListener(new MouseListener() {
 
@@ -218,7 +184,7 @@ public class ClienteFrame extends JFrame implements Runnable {
 
 						@Override
 						public void mouseEntered(MouseEvent e) {
-							
+
 							enlace.setForeground(Color.red);
 						}
 
@@ -322,25 +288,22 @@ public class ClienteFrame extends JFrame implements Runnable {
 
 				cliente = new Socket(ip, puerto);// Trata de conctarse al servidor
 
-				DataOutputStream envio = new DataOutputStream(cliente.getOutputStream());
-				envio.writeUTF(cadena);
+				paquete = new PaqueteEnvio();
+				paquete.setMensaje(cadena);
+				paquete.setIp(InetAddress.getLocalHost().getHostAddress());
+				paquete.setNick(nick);
 
-				/*
-				 * PaqueteEnvio p = new PaqueteEnvio(); p.setIp(textField2.getText());
-				 * p.setMensaje(textField.getText());
-				 * 
-				 * salida= new ObjectOutputStream(cliente.getOutputStream());
-				 * salida.writeObject(p);
-				 * 
-				 */
+				ObjectOutputStream envy = new ObjectOutputStream(cliente.getOutputStream());
+				envy.writeObject(paquete);
+
 				try {
 
 					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
 							"\n" + nick + ": ", sas);
-					StyleConstants.setBackground(sas, Color.black);
 
+					StyleConstants.setForeground(sas, Color.black);
 					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
-							textField.getText() + "\n\n", sas);
+							textField.getText() + "\n", sas);
 				} catch (BadLocationException e) {
 
 					e.printStackTrace();
@@ -402,6 +365,29 @@ public class ClienteFrame extends JFrame implements Runnable {
 
 		jenkins = new Asistente("Jenkins");
 		jenkins.setUsuario(nick);
+
+		new Thread() {
+			public void run() {
+				while (true) {
+
+					try {
+						Thread.sleep(2000);
+						Socket s = new Socket(ip, puertoParaConexiones);
+						PaqueteEnvio paq = new PaqueteEnvio();
+						paq.setIp(InetAddress.getLocalHost().getHostAddress());
+						paq.setNick(nick);
+						ObjectOutputStream dat = new ObjectOutputStream(s.getOutputStream());
+						dat.writeObject(paq);
+						s.close();
+
+					} catch (IOException | InterruptedException e) {
+						// TODO Auto-generated catch block
+						System.out.println("no");
+					}
+
+				}
+			}
+		}.start();
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setTitle(nick);
@@ -540,38 +526,50 @@ public class ClienteFrame extends JFrame implements Runnable {
 	@Override
 	public void run() { // Metodo que estara a la escucha para ver si se reciben mensajes. Es el que
 						// hace que un cliente se comporte como un servidor
-
-		try {
-
-			servidor_cliente = new ServerSocket(puerto2); // Crea el puente por el que se va a recibir la informacion
-			Socket cliente; // Prepara el puente de los que se conecten
-			while (true) {
-
-				cliente = servidor_cliente.accept();// espera que alguien intente establecer coneccion y la acepta. En
-													// el caso de esta clase el unico que intentara establecer coneccion
-													// es el servidor Principal
-				DataInputStream flujo_entrada = new DataInputStream(cliente.getInputStream());// Guarda en flujo_entrada
-																								// el dataImputStream
-																								// del socket que se
-																								// conecta
-				String entrada = flujo_entrada.readUTF();// Lee el mensaje
-
-				textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(), entrada + "\n",
-						sas);
-
-				// textArea.append(entrada + "\n");// Lo escribe en la ventana
-				cliente.close();
-				flujo_entrada.close();
-
-			}
-
-		} catch (Exception e) {
-
-		} finally {
+		while (true) {
 			try {
-				servidor_cliente.close();
-			} catch (Exception e2) {
 
+				servidor_cliente = new ServerSocket(puerto2); // Crea el puente por el que se va a recibir la
+																// informacion
+				Socket cliente; // Prepara el puente de los que se conecten
+				while (true) {
+
+					cliente = servidor_cliente.accept();// espera que alguien intente establecer coneccion y la acepta.
+														// En
+														// el caso de esta clase el unico que intentara establecer
+														// coneccion
+														// es el servidor Principal
+					ObjectInputStream flujo_entrada = new ObjectInputStream(cliente.getInputStream());// Guarda en
+																										// flujo_entrada
+																										// el
+																										// dataImputStream
+																										// del socket
+																										// que se
+																										// conecta
+					PaqueteEnvio entrada = (PaqueteEnvio) flujo_entrada.readObject();// Lee el mensaje
+
+					StyleConstants.setForeground(sas, Color.BLUE);
+					
+					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(), "@"+entrada.getNick()+": ", sas);
+
+					StyleConstants.setForeground(sas, Color.black);
+					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
+							entrada.getMensaje() + "\n", sas);
+
+					// textArea.append(entrada + "\n");// Lo escribe en la ventana
+					cliente.close();
+					flujo_entrada.close();
+
+				}
+
+			} catch (Exception e) {
+
+			} finally {
+				try {
+					servidor_cliente.close();
+				} catch (Exception e2) {
+
+				}
 			}
 		}
 	}
