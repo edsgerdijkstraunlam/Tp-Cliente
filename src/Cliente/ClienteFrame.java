@@ -26,12 +26,9 @@ import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.URI;
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.awt.Color;
 import java.awt.Cursor;
-import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
@@ -42,7 +39,6 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 
 @SuppressWarnings("serial")
 public class ClienteFrame extends JFrame implements Runnable {
@@ -56,10 +52,10 @@ public class ClienteFrame extends JFrame implements Runnable {
 	Socket cliente; // Prepara un puente para conectarse a un serverSocket
 	ServerSocket servidor_cliente; // Prepara un cliente para que se conecten otros Sockets(en este caso solo se va
 									// a conectar el servidor cuando le retransmita el mensaje)
-	int puerto = 9998; // Puerto para que se conecten
-	int puerto2 = 9996;
-	int puertoParaConexiones = 9990;
-	String ip = "localhost"; // Ip del servidor
+	int puetroClienteAServidor = 9998; // Puerto para que se conecten
+	int puertoServidorACliente = 9996;
+	int puertoParaConexionesActivas = 9994;
+	String ip = "10.11.4.6"; // Ip del servidor
 	ObjectOutputStream salida;
 	BufferedReader entrada, teclado; // Flujo de datos de entrada
 	String nick;
@@ -72,264 +68,14 @@ public class ClienteFrame extends JFrame implements Runnable {
 
 	JTextPane textPane;
 	SimpleAttributeSet sas;
-
-	public void send() { // Metodo que se ejecuta al presionar el boton enviar (o enter en el campo de
-							// mensaje)
-		StyleConstants.setForeground(sas, Color.red);
-		// Se obtiene la ip de destino y se
-		// guarda en ipCliente
-		String cadena = textField.getText(); // Se concatena la ip
-		// con el mensaje separandolas con '&' y se guarda en cadena
-
-		/*
-		 * if(ipCliente.equals("meme")) { ImageIcon meme= new
-		 * ImageIcon("Utilitarias//meme.jpg"); textPane.insertIcon(meme); return; }
-		 */
-
-		if (radioBtn.isSelected()) {
-
-			try {
-
-				String resp = jenkins.escuchar(textField.getText());
-				StyleConstants.setForeground(sas, Color.RED);
-
-				textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
-						("\n" + nick + ": "), sas);
-				StyleConstants.setForeground(sas, Color.black);
-
-				textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
-						(textField.getText() + "\n\n"), sas);
-
-				StyleConstants.setForeground(sas, Color.green);
-
-				textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(), "Jenkins: ", sas);
-				StyleConstants.setForeground(sas, Color.black);
-
-				textField.setText("");
-
-				if (resp.length() > 5 && resp.substring(0, 6).equals("&yout&")) {
-
-					String enlace = resp.substring(6);
-
-					JPanel jPanel1 = new JPanel();
-					// JFXPanel jPanel1= new JFXPanel();
-					// jPanel1.setBounds(0, 0, 50, 50);
-					SwingBrowser browser = new SwingBrowser();
-
-					// browser.loadURL("https://www.youtube.com/embed/YKevgUmzEp4");
-					browser.loadURL(enlace);
-
-					// browser.setBounds(1, 1, 10, 10);
-					jPanel1.add(browser);
-					textPane.setCaretPosition(textPane.getStyledDocument().getLength());
-					textPane.insertComponent(browser);
-					textPane.setCaretPosition(textPane.getStyledDocument().getLength());
-
-					return;
-				}
-
-				if (resp.contains("&wiki&")) {
-
-					boolean wiki = false;
-
-					String direccion;
-
-					JLabel enlace = new JLabel();
-					int tamDigDir;
-					int tamDir;
-					enlace.setBackground(Color.white);
-					enlace.setForeground(Color.blue);
-
-					if (resp.substring(6, 11).equals("&not&")) {
-
-						tamDigDir = resp.split("&")[4].length();
-						tamDir = Integer.parseInt(resp.split("&")[4]);
-						direccion = resp.substring(12 + tamDigDir, 12 + tamDigDir + tamDir);
-						// enlace.setText("Google");
-					}
-
-					else {
-
-						tamDigDir = resp.split("&")[2].length();
-						tamDir = Integer.parseInt(resp.split("&")[2]);
-						direccion = resp.substring(7 + tamDigDir, 7 + tamDigDir + tamDir);
-						wiki = true;
-						// enlace.setText("Wikipedia");
-
-					}
-
-					// enlace.setText("<html><a
-					// href=\"http://www.google.com/\">Wikipedia</a></html>");
-
-					// enlace.setToolTipText(direccion);
-					enlace.setText(direccion);
-
-					enlace.setCursor(new Cursor(Cursor.HAND_CURSOR));
-					enlace.addMouseListener(new MouseListener() {
-
-						@Override
-						public void mouseClicked(MouseEvent e) {
-
-							try {
-								if (Desktop.isDesktopSupported()) {
-									Desktop desktop = Desktop.getDesktop();
-									if (desktop.isSupported(Desktop.Action.BROWSE))
-										desktop.browse(new URI(direccion));
-
-								}
-							} catch (Exception ee) {
-							}
-							;
-						}
-
-						@Override
-						public void mouseEntered(MouseEvent e) {
-
-							enlace.setForeground(Color.red);
-						}
-
-						@Override
-						public void mouseExited(MouseEvent e) {
-
-							enlace.setForeground(Color.blue);
-
-						}
-
-						@Override
-						public void mousePressed(MouseEvent e) {
-
-						}
-
-						@Override
-						public void mouseReleased(MouseEvent e) {
-
-						}
-
-					});
-
-					textPane.insertComponent(enlace);
-					textPane.setCaretPosition(textPane.getStyledDocument().getLength());
-					if (wiki) {
-						textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
-								"\n\n" + resp.substring(7 + tamDigDir + tamDir) + "\n\n", sas);
-
-						wiki = false;
-					} else {
-						textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
-								"\nLo siento " + jenkins.getUsuario()
-										+ ", no encontre resultados en wikipedia, aqui tienes un enlace a Google que puede ayudarte\n\n",
-								sas);
-
-					}
-					return;
-
-				}
-
-				if (resp.contains("&9gag&:") || resp.contains("&gif_&:")) {
-
-					String http = resp.substring(7);
-
-					if (http.equals("&not&")) {
-
-						textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
-								"@" + nick + " lo siento, no pude encontrar el elemento solicitado\n", sas);
-						return;
-					}
-
-					try {
-
-						URL url = new URL(http);
-
-						ImageIcon mem = new ImageIcon(url);
-						if (resp.contains("&9gag&:"))
-							mem = (new ImageIcon(mem.getImage().getScaledInstance(350, 250, Image.SCALE_SMOOTH)));
-						textPane.setCaretPosition(textPane.getStyledDocument().getLength());
-						JLabel elemento = new JLabel();
-						elemento.setSize(300, 200);
-						elemento.setIcon(mem);
-						textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(), "\n", sas);
-						textPane.insertComponent(elemento);
-						textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(), "\n", sas);
-
-						return;
-					} catch (Exception e9) {
-						System.out.println("no");
-						return;
-					}
-
-				}
-
-				if (resp.contains("&meme:")) {
-					String meme = resp.split(":")[1];
-
-					ImageIcon mem = new ImageIcon("Utilitarias//Imagenes//" + meme);
-
-					Image im = mem.getImage().getScaledInstance(300, 200, Image.SCALE_SMOOTH);
-					mem = (new ImageIcon(im));
-					textPane.setCaretPosition(textPane.getStyledDocument().getLength());
-
-					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(), "\n", sas);
-					textPane.insertIcon(mem);
-					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(), "\n\n", sas);
-
-					textField.setText("");
-					return;
-				}
-				textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(), resp + "\n", sas);
-
-			} catch (BadLocationException e) {
-			}
-
-		}
-
-		else {
-
-			try {
-
-				cliente = new Socket(ip, puerto);// Trata de conctarse al servidor
-
-				paquete = new PaqueteEnvio();
-				paquete.setMensaje(cadena);
-				paquete.setIp(InetAddress.getLocalHost().getHostAddress());
-				paquete.setNick(nick);
-
-				ObjectOutputStream envy = new ObjectOutputStream(cliente.getOutputStream());
-				envy.writeObject(paquete);
-
-				try {
-
-					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
-							"\n" + nick + ": ", sas);
-
-					StyleConstants.setForeground(sas, Color.black);
-					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
-							textField.getText() + "\n", sas);
-				} catch (BadLocationException e) {
-
-					e.printStackTrace();
-				}
-
-				// textArea.append(textField.getText() + "\n"); // Se escribe en el textarea el
-				// mensaje enviado
-				textField.setText(""); // Se vacia el campo de mensaje
-				cliente.close();
-
-			} catch (IOException e) {
-				try {
-					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
-							"\nNO SE PUEDE ESTABLECER CONEXION\n", sas);
-				} catch (BadLocationException e1) {
-
-					e1.printStackTrace();
-				}
-
-				// textArea.append("\nNO SE PUEDE ESTABLECER CONEXION\n");
-
-			}
-		}
-	}
-
+	
+	
+	
+	
+	
 	public ClienteFrame() {
+
+		
 
 		System.setProperty("java.net.useSystemProxies", "true");
 		System.setProperty("file.encoding", "UTF-8");
@@ -372,7 +118,7 @@ public class ClienteFrame extends JFrame implements Runnable {
 
 					try {
 						Thread.sleep(2000);
-						Socket s = new Socket(ip, puertoParaConexiones);
+						Socket s = new Socket(ip, puertoParaConexionesActivas);
 						PaqueteEnvio paq = new PaqueteEnvio();
 						paq.setIp(InetAddress.getLocalHost().getHostAddress());
 						paq.setNick(nick);
@@ -381,8 +127,7 @@ public class ClienteFrame extends JFrame implements Runnable {
 						s.close();
 
 					} catch (IOException | InterruptedException e) {
-						// TODO Auto-generated catch block
-						System.out.println("no");
+						
 					}
 
 				}
@@ -522,55 +267,140 @@ public class ClienteFrame extends JFrame implements Runnable {
 		});
 
 	}
+	public void send() { // Metodo que se ejecuta al presionar el boton enviar (o enter en el campo de
+							// mensaje)
+		StyleConstants.setForeground(sas, Color.red);
+		String cadena = textField.getText();
+		
+
+		if (radioBtn.isSelected()) {
+
+			try {
+				String resp = jenkins.escuchar(textField.getText());
+				StyleConstants.setForeground(sas, Color.RED);
+
+				textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
+						("\n" + nick + ": "), sas);
+				StyleConstants.setForeground(sas, Color.black);
+
+				textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
+						(textField.getText() + "\n\n"), sas);
+
+				StyleConstants.setForeground(sas, Color.green);
+
+				textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(), "Jenkins: ", sas);
+				StyleConstants.setForeground(sas, Color.black);
+				
+				ManejadorDeAsistente.manejar(resp, textPane, sas, nick);
+
+				textField.setText("");
+				return;
+				
+			} catch (BadLocationException e) {
+			}
+
+			
+		}
+
+		else {
+
+			try {
+				
+
+				cliente = new Socket(ip, puetroClienteAServidor);// Trata de conctarse al servidor
+
+				paquete = new PaqueteEnvio();
+				paquete.setMensaje(cadena);
+				paquete.setIp(InetAddress.getLocalHost().getHostAddress());
+				paquete.setNick(nick);
+
+				ObjectOutputStream envy = new ObjectOutputStream(cliente.getOutputStream());
+				envy.writeObject(paquete);
+
+				try {
+
+					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
+							"\n" + nick + ": ", sas);
+
+					StyleConstants.setForeground(sas, Color.black);
+					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
+							textField.getText() + "\n", sas);
+				} catch (BadLocationException e) {
+
+					e.printStackTrace();
+				}
+
+				// textArea.append(textField.getText() + "\n"); // Se escribe en el textarea el
+				// mensaje enviado
+				textField.setText(""); // Se vacia el campo de mensaje
+				cliente.close();
+
+			} catch (IOException e) {
+				try {
+					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
+							"\nNO SE PUEDE ESTABLECER CONEXION\n", sas);
+				} catch (BadLocationException e1) {
+
+					e1.printStackTrace();
+				}
+
+				// textArea.append("\nNO SE PUEDE ESTABLECER CONEXION\n");
+
+			}
+		}
+	}
+
+
 
 	@Override
 	public void run() { // Metodo que estara a la escucha para ver si se reciben mensajes. Es el que
 						// hace que un cliente se comporte como un servidor
-		while (true) {
-			try {
 
-				servidor_cliente = new ServerSocket(puerto2); // Crea el puente por el que se va a recibir la
-																// informacion
-				Socket cliente; // Prepara el puente de los que se conecten
-				while (true) {
+		try {
 
-					cliente = servidor_cliente.accept();// espera que alguien intente establecer coneccion y la acepta.
-														// En
-														// el caso de esta clase el unico que intentara establecer
-														// coneccion
-														// es el servidor Principal
-					ObjectInputStream flujo_entrada = new ObjectInputStream(cliente.getInputStream());// Guarda en
-																										// flujo_entrada
-																										// el
-																										// dataImputStream
-																										// del socket
-																										// que se
-																										// conecta
-					PaqueteEnvio entrada = (PaqueteEnvio) flujo_entrada.readObject();// Lee el mensaje
+			servidor_cliente = new ServerSocket(puertoServidorACliente); // Crea el puente por el que se va a recibir la
+															// informacion
+			Socket cliente; // Prepara el puente de los que se conecten
+			while (true) {
 
-					StyleConstants.setForeground(sas, Color.BLUE);
-					
-					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(), "@"+entrada.getNick()+": ", sas);
+				cliente = servidor_cliente.accept();// espera que alguien intente establecer coneccion y la acepta.
+													// En
+													// el caso de esta clase el unico que intentara establecer
+													// coneccion
+													// es el servidor Principal
+				ObjectInputStream flujo_entrada = new ObjectInputStream(cliente.getInputStream());// Guarda en
+																									// flujo_entrada
+																									// el
+																									// dataImputStream
+																									// del socket
+																									// que se
+																									// conecta
+				PaqueteEnvio entrada = (PaqueteEnvio) flujo_entrada.readObject();// Lee el mensaje
 
-					StyleConstants.setForeground(sas, Color.black);
-					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
-							entrada.getMensaje() + "\n", sas);
+				StyleConstants.setForeground(sas, Color.BLUE);
 
-					// textArea.append(entrada + "\n");// Lo escribe en la ventana
-					cliente.close();
-					flujo_entrada.close();
+				textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
+						"@" + entrada.getNick() + ": ", sas);
 
-				}
+				StyleConstants.setForeground(sas, Color.black);
+				textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
+						entrada.getMensaje() + "\n", sas);
 
-			} catch (Exception e) {
-
-			} finally {
-				try {
-					servidor_cliente.close();
-				} catch (Exception e2) {
-
-				}
+				// textArea.append(entrada + "\n");// Lo escribe en la ventana
+				flujo_entrada.close();
+				
+				cliente.close();
 			}
-		}
+
+		} catch (Exception e) {
+
+		} 
 	}
+
 }
+
+
+
+
+
+
