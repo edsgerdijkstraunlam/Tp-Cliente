@@ -9,6 +9,8 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 
+import com.google.gson.Gson;
+
 import dijkstra_paqueteEnvio.PaqueteEnvio;
 import edsger_dijkstra_unlam.asistente.asistente.Asistente;
 //import dijkstra_paqueteEnvio;
@@ -19,8 +21,9 @@ import javax.swing.JButton;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
@@ -55,7 +58,7 @@ public class ClienteFrame extends JFrame implements Runnable {
 	int puetroClienteAServidor = 9998; // Puerto para que se conecten
 	int puertoServidorACliente = 9996;
 	int puertoParaConexionesActivas = 9994;
-	String ip = "10.11.4.6"; // Ip del servidor
+	String ip = "192.168.100.6"; // Ip del servidor
 	ObjectOutputStream salida;
 	BufferedReader entrada, teclado; // Flujo de datos de entrada
 	String nick;
@@ -77,7 +80,7 @@ public class ClienteFrame extends JFrame implements Runnable {
 
 		
 
-		System.setProperty("java.net.useSystemProxies", "true");
+	//	System.setProperty("java.net.useSystemProxies", "true");
 		System.setProperty("file.encoding", "UTF-8");
 		Field charset;
 		try {
@@ -114,6 +117,7 @@ public class ClienteFrame extends JFrame implements Runnable {
 
 		new Thread() {
 			public void run() {
+				Gson gson=new Gson();
 				while (true) {
 
 					try {
@@ -122,8 +126,10 @@ public class ClienteFrame extends JFrame implements Runnable {
 						PaqueteEnvio paq = new PaqueteEnvio();
 						paq.setIp(InetAddress.getLocalHost().getHostAddress());
 						paq.setNick(nick);
-						ObjectOutputStream dat = new ObjectOutputStream(s.getOutputStream());
-						dat.writeObject(paq);
+						DataOutputStream dat = new DataOutputStream(s.getOutputStream());
+						
+						String json= gson.toJson(paq);
+						dat.writeUTF(json);
 						s.close();
 
 					} catch (IOException | InterruptedException e) {
@@ -314,8 +320,13 @@ public class ClienteFrame extends JFrame implements Runnable {
 				paquete.setIp(InetAddress.getLocalHost().getHostAddress());
 				paquete.setNick(nick);
 
-				ObjectOutputStream envy = new ObjectOutputStream(cliente.getOutputStream());
-				envy.writeObject(paquete);
+				Gson gson = new Gson();
+				String json = gson.toJson(paquete);
+				
+				DataOutputStream envia = new DataOutputStream(cliente.getOutputStream());
+				envia.writeUTF(json);
+				//ObjectOutputStream envy = new ObjectOutputStream(cliente.getOutputStream());
+				//envy.writeObject(paquete);
 
 				try {
 
@@ -359,7 +370,7 @@ public class ClienteFrame extends JFrame implements Runnable {
 		try {
 
 			servidor_cliente = new ServerSocket(puertoServidorACliente); // Crea el puente por el que se va a recibir la
-															// informacion
+			Gson gson= new Gson();									// informacion
 			Socket cliente; // Prepara el puente de los que se conecten
 			while (true) {
 
@@ -368,14 +379,15 @@ public class ClienteFrame extends JFrame implements Runnable {
 													// el caso de esta clase el unico que intentara establecer
 													// coneccion
 													// es el servidor Principal
-				ObjectInputStream flujo_entrada = new ObjectInputStream(cliente.getInputStream());// Guarda en
+				DataInputStream flujo_entrada = new DataInputStream(cliente.getInputStream());// Guarda en
 																									// flujo_entrada
-																									// el
+				String json= flujo_entrada.readUTF();
+				// el
 																									// dataImputStream
 																									// del socket
 																									// que se
 																									// conecta
-				PaqueteEnvio entrada = (PaqueteEnvio) flujo_entrada.readObject();// Lee el mensaje
+				PaqueteEnvio entrada = gson.fromJson(json, PaqueteEnvio.class);// Lee el mensaje
 
 				StyleConstants.setForeground(sas, Color.BLUE);
 

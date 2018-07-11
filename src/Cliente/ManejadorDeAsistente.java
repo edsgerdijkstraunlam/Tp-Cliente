@@ -25,16 +25,9 @@ public class ManejadorDeAsistente {
 		if (resp.length() > 5 && resp.substring(0, 6).equals("&yout&")) {
 
 			String enlace = resp.substring(6);
-
 			JPanel jPanel1 = new JPanel();
-			// JFXPanel jPanel1= new JFXPanel();
-			// jPanel1.setBounds(0, 0, 50, 50);
 			SwingBrowser browser = new SwingBrowser();
-
-			// browser.loadURL("https://www.youtube.com/embed/YKevgUmzEp4");
 			browser.loadURL(enlace);
-
-			// browser.setBounds(1, 1, 10, 10);
 			jPanel1.add(browser);
 			textPane.setCaretPosition(textPane.getStyledDocument().getLength());
 			textPane.insertComponent(browser);
