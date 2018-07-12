@@ -11,7 +11,7 @@ import javax.swing.text.StyleConstants;
 
 import com.google.gson.Gson;
 
-import dijkstra_paqueteEnvio.PaqueteEnvio;
+import dijkstra_paqueteEnvio.Usuario;
 import edsger_dijkstra_unlam.asistente.asistente.Asistente;
 //import dijkstra_paqueteEnvio;
 import javax.swing.JTextField;
@@ -47,15 +47,15 @@ public class ClienteFrame extends JFrame implements Runnable {
 	private JPanel contentPane;
 	private JTextField textField;
 
-	//private JTextField textField2;
-	PaqueteEnvio paquete;
+	// private JTextField textField2;
+	Usuario destinatario;
 	Socket cliente; // Prepara un puente para conectarse a un serverSocket
 	ServerSocket servidor_cliente; // Prepara un cliente para que se conecten otros Sockets(en este caso solo se va
 									// a conectar el servidor cuando le retransmita el mensaje)
 	int puetroClienteAServidor = 9998; // Puerto para que se conecten
 	int puertoServidorACliente = 9996;
 	int puertoParaConexionesActivas = 9994;
-	String ip = "10.11.3.10"; // Ip del servidor
+	String ip = "192.168.100.5"; // Ip del servidor
 	ObjectOutputStream salida;
 	BufferedReader entrada, teclado; // Flujo de datos de entrada
 	String nick;
@@ -68,16 +68,10 @@ public class ClienteFrame extends JFrame implements Runnable {
 
 	JTextPane textPane;
 	SimpleAttributeSet sas;
-	
-	
-	
-	
-	
+
 	public ClienteFrame(String nick) {
 
-		
-
-	//	System.setProperty("java.net.useSystemProxies", "true");
+		// System.setProperty("java.net.useSystemProxies", "true");
 		System.setProperty("file.encoding", "UTF-8");
 		Field charset;
 		try {
@@ -99,46 +93,28 @@ public class ClienteFrame extends JFrame implements Runnable {
 
 		//////////////////////////////////////////////////////////////
 
-		this.nick=nick;
-		
-		
-		
-		
-		
-		
-		/*
-		nick = JOptionPane.showInputDialog("Nick:");
-		if (nick == null || nick.length() < 3) {
-			do {
-				JOptionPane.showMessageDialog(null, "Tu usario debe tener al menos 3 caracteres", "Error",
-						JOptionPane.ERROR_MESSAGE);
+		this.nick = nick;
 
-				nick = JOptionPane.showInputDialog("Nick:");
-			} while (nick == null || nick.length() < 3);
-		}
-*/
 		jenkins = new Asistente("Jenkins");
 		jenkins.setUsuario(nick);
 
 		new Thread() {
 			public void run() {
-				Gson gson=new Gson();
+				Gson gson = new Gson();
 				while (true) {
 
 					try {
 						Thread.sleep(2000);
 						Socket s = new Socket(ip, puertoParaConexionesActivas);
-						PaqueteEnvio paq = new PaqueteEnvio();
-						paq.setIp(InetAddress.getLocalHost().getHostAddress());
-						paq.setNick(nick);
+						Usuario paq = new Usuario(nick, InetAddress.getLocalHost().getHostAddress());
 						DataOutputStream dat = new DataOutputStream(s.getOutputStream());
-						
-						String json= gson.toJson(paq);
+
+						String json = gson.toJson(paq);
 						dat.writeUTF(json);
 						s.close();
 
 					} catch (IOException | InterruptedException e) {
-						
+
 					}
 
 				}
@@ -146,7 +122,7 @@ public class ClienteFrame extends JFrame implements Runnable {
 		}.start();
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setTitle("Chat-"+nick);
+		setTitle("Chat-" + nick);
 		setBounds(100, 100, 450, 300);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -186,14 +162,11 @@ public class ClienteFrame extends JFrame implements Runnable {
 		textPane.setBounds(10, 143, 410, 108);
 		contentPane.add(textPane);
 
-
 		// *****************************************************************//
 		JScrollPane scrollPane = new JScrollPane(textPane);
 		scrollPane.setBounds(10, 143, 410, 108);
 		this.add(scrollPane);
 		// *****************************************************************//
-
-
 
 		imagenDeFondo = new JLabel();
 
@@ -240,16 +213,16 @@ public class ClienteFrame extends JFrame implements Runnable {
 		});
 
 	}
-	public void send() { // Metodo que se ejecuta al presionar el boton enviar (o enter en el campo de
-							// mensaje)
+
+	public void send() { 
+
 		StyleConstants.setForeground(sas, Color.red);
 		String cadena = textField.getText();
-		
 
-		if (cadena.toLowerCase().contains("@jenkins ")||cadena.toLowerCase().contains(" @jenkins")) {
+		if (cadena.toLowerCase().contains("@jenkins ") || cadena.toLowerCase().contains(" @jenkins")) {
 
-			cadena= cadena.toLowerCase().replace("@jenkins ", "");
-			cadena= cadena.toLowerCase().replace(" @jenkins", "");
+			cadena = cadena.toLowerCase().replace("@jenkins ", "");
+			cadena = cadena.toLowerCase().replace(" @jenkins", "");
 			try {
 				String resp = jenkins.escuchar(cadena);
 				StyleConstants.setForeground(sas, Color.RED);
@@ -265,42 +238,36 @@ public class ClienteFrame extends JFrame implements Runnable {
 
 				textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(), "Jenkins: ", sas);
 				StyleConstants.setForeground(sas, Color.black);
-				
+
 				ManejadorDeAsistente.manejar(resp, textPane, sas, nick);
 
 				textField.setText("");
 				return;
-				
+
 			} catch (BadLocationException e) {
 			}
 
-			
 		}
 
 		else {
 
 			try {
-				
 
 				cliente = new Socket(ip, puetroClienteAServidor);// Trata de conctarse al servidor
 
-				paquete = new PaqueteEnvio();
-				paquete.setMensaje(cadena);
-				paquete.setIp(InetAddress.getLocalHost().getHostAddress());
-				paquete.setNick(nick);
+				destinatario = new Usuario(nick, InetAddress.getLocalHost().getHostAddress());
+				destinatario.setMensaje(cadena);
 
 				Gson gson = new Gson();
-				String json = gson.toJson(paquete);
-				
+				String json = gson.toJson(destinatario);
+
 				DataOutputStream envia = new DataOutputStream(cliente.getOutputStream());
 				envia.writeUTF(json);
-				//ObjectOutputStream envy = new ObjectOutputStream(cliente.getOutputStream());
-				//envy.writeObject(paquete);
-
+		
 				try {
 
-					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
-							nick + ": ", sas);
+					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(), nick + ": ",
+							sas);
 
 					StyleConstants.setForeground(sas, Color.black);
 					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
@@ -311,8 +278,7 @@ public class ClienteFrame extends JFrame implements Runnable {
 					e.printStackTrace();
 				}
 
-				// textArea.append(textField.getText() + "\n"); // Se escribe en el textarea el
-				// mensaje enviado
+				
 				textField.setText(""); // Se vacia el campo de mensaje
 				cliente.close();
 
@@ -325,13 +291,10 @@ public class ClienteFrame extends JFrame implements Runnable {
 					e1.printStackTrace();
 				}
 
-				// textArea.append("\nNO SE PUEDE ESTABLECER CONEXION\n");
-
+			
 			}
 		}
 	}
-
-
 
 	@Override
 	public void run() { // Metodo que estara a la escucha para ver si se reciben mensajes. Es el que
@@ -339,9 +302,9 @@ public class ClienteFrame extends JFrame implements Runnable {
 
 		try {
 
-			servidor_cliente = new ServerSocket(puertoServidorACliente); // Crea el puente por el que se va a recibir la
-			Gson gson= new Gson();									// informacion
-			Socket cliente; // Prepara el puente de los que se conecten
+			servidor_cliente = new ServerSocket(puertoServidorACliente); // Crea el puente por el que se va a recibir la informacion
+			Gson gson = new Gson(); 
+			Socket cliente;
 			while (true) {
 
 				cliente = servidor_cliente.accept();// espera que alguien intente establecer coneccion y la acepta.
@@ -350,14 +313,10 @@ public class ClienteFrame extends JFrame implements Runnable {
 													// coneccion
 													// es el servidor Principal
 				DataInputStream flujo_entrada = new DataInputStream(cliente.getInputStream());// Guarda en
-																									// flujo_entrada
-				String json= flujo_entrada.readUTF();
-				// el
-																									// dataImputStream
-																									// del socket
-																									// que se
-																									// conecta
-				PaqueteEnvio entrada = gson.fromJson(json, PaqueteEnvio.class);// Lee el mensaje
+																								// flujo_entrada
+				String json = flujo_entrada.readUTF();
+			
+				Usuario entrada = gson.fromJson(json, Usuario.class);// Lee el mensaje
 
 				StyleConstants.setForeground(sas, Color.BLUE);
 
@@ -367,22 +326,17 @@ public class ClienteFrame extends JFrame implements Runnable {
 				StyleConstants.setForeground(sas, Color.black);
 				textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
 						entrada.getMensaje() + "\n", sas);
-
-				// textArea.append(entrada + "\n");// Lo escribe en la ventana
+				textPane.setCaretPosition(textPane.getStyledDocument().getLength());
 				flujo_entrada.close();
-				
+
 				cliente.close();
 			}
 
 		} catch (Exception e) {
 
-		} 
+		}
 	}
 
+
+
 }
-
-
-
-
-
-

@@ -6,6 +6,7 @@ import java.awt.event.ActionListener;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.BindException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -17,12 +18,13 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
 import com.google.gson.Gson;
 
-import dijkstra_paqueteEnvio.PaqueteEnvio;
+import dijkstra_paqueteEnvio.Pedido;
 
 public class VentanaDeIngreso extends JFrame {
 
@@ -33,15 +35,17 @@ public class VentanaDeIngreso extends JFrame {
 
 	private JPanel contentPane;
 	private JTextField textUsuario;
-	private JTextField textPass;
+	private JPasswordField textPass;
 	private JLabel usuarioLabel;
 	private JLabel passLabel;
 	private JButton ingresar;
 	private JButton nuevo;
-	private String ip = "10.11.3.10";
+	private String ip = "192.168.100.5";
 	private int puerto = 9890;
 	private int puertoParaValidacionDeUsuarios = 9894;
 	private String nombre;
+	private ServerSocket serv;
+	private JFrame ventana = this;
 
 	public VentanaDeIngreso() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -50,13 +54,13 @@ public class VentanaDeIngreso extends JFrame {
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
-		
-		JLabel imagenDeFondo= new JLabel();;
-		imagenDeFondo.setBounds(0, 0, this.getWidth(),250);
+
+		JLabel imagenDeFondo = new JLabel();
+		imagenDeFondo.setBounds(0, 0, this.getWidth(), 250);
 		ImageIcon icon;
 		Image img;
 		try {
-			icon= new ImageIcon("Utilitarias//icono.jpg");
+			icon = new ImageIcon("Utilitarias//icono.jpg");
 
 			img = icon.getImage().getScaledInstance(imagenDeFondo.getWidth(), imagenDeFondo.getHeight(),
 					Image.SCALE_SMOOTH);
@@ -68,15 +72,14 @@ public class VentanaDeIngreso extends JFrame {
 			this.setIconImage(imgApp);
 
 		} catch (Exception e) {
-			System.out.println("no");
+
 		}
 
-		
 		textUsuario = new JTextField();
 		textUsuario.setBounds(110, 100, 300, 20);
 		contentPane.add(textUsuario);
 
-		textPass = new JTextField();
+		textPass = new JPasswordField();
 		textPass.setBounds(110, 130, 300, 20);
 		contentPane.add(textPass);
 
@@ -96,58 +99,33 @@ public class VentanaDeIngreso extends JFrame {
 		nuevo.setBounds(255, 190, 100, 30);
 		contentPane.add(nuevo);
 		contentPane.add(imagenDeFondo);
-	}
+		
 
-	public void validar() {
 		this.setLocationRelativeTo(null);
-		this.setVisible(true);
-		JFrame ventana = this;
-		new Thread() {
-			public void run() {
-
-				ServerSocket serv;
-				while (true) {
-					try {
-						serv = new ServerSocket(puertoParaValidacionDeUsuarios);
-						Socket s = serv.accept();
-						DataInputStream d = new DataInputStream(s.getInputStream());
-						String resp = d.readUTF();
-						serv.close();
-						switch (resp) {
-
-						case "NOTFOUND":
-							JOptionPane.showMessageDialog(null, "No se ha encontrado tu usuario", "Error",
-									JOptionPane.ERROR_MESSAGE);
-							break;
-						case "CONNECT":
-							ClienteFrame f = new ClienteFrame(nombre);
-							f.setLocationRelativeTo(null);
-							f.setVisible(true);
-							ventana.setVisible(false);
-							break;
-						case "NOTPASS":
-							JOptionPane.showMessageDialog(null, "Contraseña incorrecta", "Error",
-									JOptionPane.ERROR_MESSAGE);
-							break;
-
-						default:
-							break;
-
-						}
-
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+		nuevo.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				try {
+					serv.close();
+				} catch (Exception e) {
 
 				}
+				VentanaNuevoUsuario v = new VentanaNuevoUsuario(ventana);
+				v.setLocationRelativeTo(null);
+				v.setVisible(true);
+				ventana.setVisible(false);
+
 			}
-		}.start();
+		});
+		
+		
+		
+		
+		
 
 		ingresar.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				nombre = textUsuario.getText();
-				String pass = textPass.getText();
+				String pass = String.valueOf(textPass.getPassword());
 
 				if (nombre.equals("") || pass.equals("")) {
 					JOptionPane.showMessageDialog(null, "Los campos no pueden estar vacios", "Error",
@@ -155,14 +133,14 @@ public class VentanaDeIngreso extends JFrame {
 					return;
 				}
 
-				PaqueteEnvio paquete = new PaqueteEnvio();
-				paquete.setNick(nombre);
-				paquete.setContraseña(pass);
+				Pedido paquete;
 				try {
-					paquete.setIp(InetAddress.getLocalHost().getHostAddress());
+					paquete = new Pedido(nombre, pass, InetAddress.getLocalHost().getHostAddress(), Pedido.ingresar);
+
 				} catch (UnknownHostException e1) {
 					// TODO Auto-generated catch block
-					e1.printStackTrace();
+					JOptionPane.showMessageDialog(null, "Error con el host local", "Error", JOptionPane.ERROR_MESSAGE);
+					return;
 				}
 				Gson gson = new Gson();
 				String json = gson.toJson(paquete);
@@ -177,11 +155,56 @@ public class VentanaDeIngreso extends JFrame {
 					JOptionPane.showMessageDialog(null, "No hay conexion con el servidor", "Error",
 							JOptionPane.ERROR_MESSAGE);
 				}
-
+				esperarRespuesta();
 			}
 
 		});
 
+	
+	}
+
+	public void esperarRespuesta() {
+		try {
+			serv = new ServerSocket(puertoParaValidacionDeUsuarios);
+			Socket s;
+
+			s = serv.accept();
+			DataInputStream d = new DataInputStream(s.getInputStream());
+			String resp = d.readUTF();
+			serv.close();
+			d.close();
+			switch (resp) {
+
+			case "NOTFOUND":
+				JOptionPane.showMessageDialog(null, "No se ha encontrado tu usuario", "Error",
+						JOptionPane.ERROR_MESSAGE);
+				break;
+			case "CONNECT":
+				ClienteFrame f = new ClienteFrame(nombre);
+				f.setLocationRelativeTo(null);
+
+				f.setVisible(true);
+
+				ventana.setVisible(false);
+				break;
+			case "NOTPASS":
+				JOptionPane.showMessageDialog(null, "Contraseña incorrecta", "Error", JOptionPane.ERROR_MESSAGE);
+				break;
+
+			default:
+				break;
+
+			}
+
+		} catch (BindException e) {
+			// TODO Auto-generated catch block
+			JOptionPane.showMessageDialog(null, "No puedes tener dos ventanas de login abiertas al mismo tiempo",
+					"Error", JOptionPane.ERROR_MESSAGE);
+			ventana.setVisible(false);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 }

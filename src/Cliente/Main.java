@@ -5,7 +5,7 @@ public class Main {
 		
 		
 		VentanaDeIngreso v= new VentanaDeIngreso();
-		v.validar();
+		v.setVisible(true);
 		
 		/*ClienteFrame x= new ClienteFrame();
 		
