@@ -36,12 +36,9 @@ import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 
 @SuppressWarnings("serial")
 public class ClienteFrame extends JFrame implements Runnable {
@@ -50,7 +47,7 @@ public class ClienteFrame extends JFrame implements Runnable {
 	private JPanel contentPane;
 	private JTextField textField;
 
-	private JTextField textField2;
+	//private JTextField textField2;
 	PaqueteEnvio paquete;
 	Socket cliente; // Prepara un puente para conectarse a un serverSocket
 	ServerSocket servidor_cliente; // Prepara un cliente para que se conecten otros Sockets(en este caso solo se va
@@ -58,7 +55,7 @@ public class ClienteFrame extends JFrame implements Runnable {
 	int puetroClienteAServidor = 9998; // Puerto para que se conecten
 	int puertoServidorACliente = 9996;
 	int puertoParaConexionesActivas = 9994;
-	String ip = "192.168.100.6"; // Ip del servidor
+	String ip = "10.11.3.10"; // Ip del servidor
 	ObjectOutputStream salida;
 	BufferedReader entrada, teclado; // Flujo de datos de entrada
 	String nick;
@@ -76,7 +73,7 @@ public class ClienteFrame extends JFrame implements Runnable {
 	
 	
 	
-	public ClienteFrame() {
+	public ClienteFrame(String nick) {
 
 		
 
@@ -102,6 +99,14 @@ public class ClienteFrame extends JFrame implements Runnable {
 
 		//////////////////////////////////////////////////////////////
 
+		this.nick=nick;
+		
+		
+		
+		
+		
+		
+		/*
 		nick = JOptionPane.showInputDialog("Nick:");
 		if (nick == null || nick.length() < 3) {
 			do {
@@ -111,7 +116,7 @@ public class ClienteFrame extends JFrame implements Runnable {
 				nick = JOptionPane.showInputDialog("Nick:");
 			} while (nick == null || nick.length() < 3);
 		}
-
+*/
 		jenkins = new Asistente("Jenkins");
 		jenkins.setUsuario(nick);
 
@@ -141,7 +146,7 @@ public class ClienteFrame extends JFrame implements Runnable {
 		}.start();
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setTitle(nick);
+		setTitle("Chat-"+nick);
 		setBounds(100, 100, 450, 300);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -181,14 +186,6 @@ public class ClienteFrame extends JFrame implements Runnable {
 		textPane.setBounds(10, 143, 410, 108);
 		contentPane.add(textPane);
 
-		/*
-		 * textArea = new JTextArea(); textArea.setBounds(10, 143, 410, 108);
-		 * contentPane.add(textArea);
-		 */
-		textField2 = new JTextField();
-		textField2.setBounds(10, 50, 197, 20);
-		contentPane.add(textField2);
-		textField2.setColumns(10);
 
 		// *****************************************************************//
 		JScrollPane scrollPane = new JScrollPane(textPane);
@@ -196,37 +193,7 @@ public class ClienteFrame extends JFrame implements Runnable {
 		this.add(scrollPane);
 		// *****************************************************************//
 
-		radioBtn = new JRadioButton("Asistente");
-		radioBtn.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent arg0) {
-				if (radioBtn.isSelected()) {
 
-					textField2.setBackground(Color.red);
-					textField2.setText("Jenkins");
-					textField2.setEnabled(false);
-
-				} else {
-
-					textField2.setBackground(Color.WHITE);
-					textField2.setText("");
-					textField2.setEnabled(true);
-
-				}
-			}
-		});
-		radioBtn.setBounds(247, 50, 80, 20);
-		/////////////////////////////////////
-
-		// PREPARADO PARA ASISTENTE//
-
-		radioBtn.setSelected(true);
-		textField2.setBackground(Color.red);
-		textField2.setText("Jenkins");
-
-		/////////////////////////////////////
-		textField2.setEnabled(false);
-		contentPane.add(radioBtn);
 
 		imagenDeFondo = new JLabel();
 
@@ -279,10 +246,12 @@ public class ClienteFrame extends JFrame implements Runnable {
 		String cadena = textField.getText();
 		
 
-		if (radioBtn.isSelected()) {
+		if (cadena.toLowerCase().contains("@jenkins ")||cadena.toLowerCase().contains(" @jenkins")) {
 
+			cadena= cadena.toLowerCase().replace("@jenkins ", "");
+			cadena= cadena.toLowerCase().replace(" @jenkins", "");
 			try {
-				String resp = jenkins.escuchar(textField.getText());
+				String resp = jenkins.escuchar(cadena);
 				StyleConstants.setForeground(sas, Color.RED);
 
 				textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
@@ -331,11 +300,12 @@ public class ClienteFrame extends JFrame implements Runnable {
 				try {
 
 					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
-							"\n" + nick + ": ", sas);
+							nick + ": ", sas);
 
 					StyleConstants.setForeground(sas, Color.black);
 					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
 							textField.getText() + "\n", sas);
+					textPane.setCaretPosition(textPane.getStyledDocument().getLength());
 				} catch (BadLocationException e) {
 
 					e.printStackTrace();

@@ -9,7 +9,7 @@ import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
  
 public class SwingBrowser extends JFXPanel {
-//Variable encargada de renderizar el website
+//Variable encargada de renderizar el website 
  
     /**
 	 * 
