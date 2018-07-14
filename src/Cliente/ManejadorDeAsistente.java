@@ -21,7 +21,7 @@ public class ManejadorDeAsistente {
 
 	public static void manejar(String resp, JTextPane textPane, SimpleAttributeSet sas, String usuario) {
 
-		System.setProperty("java.net.useSystemProxies", "true");
+		//System.setProperty("java.net.useSystemProxies", "true");
 		if (resp.length() > 5 && resp.substring(0, 6).equals("&yout&")) {
 
 			String enlace = resp.substring(6);
@@ -30,6 +30,11 @@ public class ManejadorDeAsistente {
 			browser.loadURL(enlace);
 			jPanel1.add(browser);
 			textPane.setCaretPosition(textPane.getStyledDocument().getLength());
+			try {
+				textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
+						"\n", sas);
+			} catch (BadLocationException e) {
+			}
 			textPane.insertComponent(browser);
 			textPane.setCaretPosition(textPane.getStyledDocument().getLength());
 
