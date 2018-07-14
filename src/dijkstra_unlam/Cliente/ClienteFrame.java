@@ -1,4 +1,4 @@
-package Cliente;
+package dijkstra_unlam.Cliente;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -31,6 +31,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
+import java.net.BindException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -42,6 +43,7 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Image;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -57,14 +59,14 @@ public class ClienteFrame extends JFrame implements Runnable {
 	private JTextField textField;
 
 	// private JTextField textField2;
-	Usuarios destinatario;
+	// Usuarios destinatario;
 	Socket cliente; // Prepara un puente para conectarse a un serverSocket
 	ServerSocket servidor_cliente; // Prepara un cliente para que se conecten otros Sockets(en este caso solo se va
 									// a conectar el servidor cuando le retransmita el mensaje)
 	int puetroClienteAServidor = 9998; // Puerto para que se conecten
 	int puertoServidorACliente = 9996;
 	int puertoParaConexionesActivas = 9994;
-	int puertoParaPedidos=9890;
+	int puertoParaPedidos = 9890;
 
 	private int puertoParaControlDeSalas = 9895;
 	String ip = "192.168.100.5"; // Ip del servidor
@@ -84,7 +86,9 @@ public class ClienteFrame extends JFrame implements Runnable {
 	JLabel salaActual;
 	JComboBox<String> salasComboBox;
 	JButton nuevaSala;
-	ArrayList<String >listaSalas;
+	ArrayList<String> listaSalas;
+	JLabel notificacion;
+	Thread notif;
 
 	public ClienteFrame(String nick) {
 
@@ -108,82 +112,31 @@ public class ClienteFrame extends JFrame implements Runnable {
 		Thread hilo = new Thread(this);
 		hilo.start();
 
+		notif = new Thread() {
+			public void run() {
+				notificacion.setVisible(true);
+				try {
+					for (int i = 0; i < 5; i++) {
+						Thread.sleep(300);
+						notificacion.setVisible(true);
+						Thread.sleep(300);
+						notificacion.setVisible(false);
+					}
+
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+			}
+		};
+
 		//////////////////////////////////////////////////////////////
 
 		this.nick = nick;
-		listaSalas= new ArrayList<String>();
+		listaSalas = new ArrayList<String>();
 		jenkins = new Asistente("Jenkins");
 		jenkins.setUsuario(nick);
-
-		new Thread() {
-			public void run() {
-				
-				while(true) {
-					try {
-						Thread.sleep(6000);
-						ServerSocket serv= new ServerSocket(puertoParaControlDeSalas);
-						Socket s= serv.accept();
-						serv.close();
-						DataInputStream d= new DataInputStream(s.getInputStream());
-						Gson gson= new Gson();
-						java.lang.reflect.Type type = new TypeToken<ArrayList<String>>(){}.getType();
-						//listaSalas.clear();
-						ArrayList<String>lista = gson.fromJson(d.readUTF(), type);
-						
-						int cant1=listaSalas.size();
-						
-						int cant2=lista.size();
-						//listaDeSalas.removeAllItems();
-						/*int itemCount = listaDeSalas.getItemCount();
-
-					    for(int i=0;i<itemCount;i++){
-					    	listaDeSalas.removeItemAt(0);
-					     }*/
-						for (int i= cant1;i<cant2;i++) {
-							listaSalas.add(lista.get(i));
-							salasComboBox.addItem(lista.get(i));
-						}
-						
-						
-						
-					} catch (InterruptedException | IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
-				
-				
-				
-				
-				
-				
-			}
-		}.start();
-		
-		
-		
-		new Thread() {
-			public void run() {
-				Gson gson = new Gson();
-				while (true) {
-
-					try {
-						Thread.sleep(2000);
-						Socket s = new Socket(ip, puertoParaConexionesActivas);
-						Usuarios paq = new Usuarios(nick, InetAddress.getLocalHost().getHostAddress());
-						DataOutputStream dat = new DataOutputStream(s.getOutputStream());
-
-						String json = gson.toJson(paq);
-						dat.writeUTF(json);
-						s.close();
-
-					} catch (IOException | InterruptedException e) {
-
-					}
-
-				}
-			}
-		}.start();
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setTitle("Chat-" + nick);
@@ -198,9 +151,115 @@ public class ClienteFrame extends JFrame implements Runnable {
 		textField.setBackground(new Color(230, 230, 230));
 		contentPane.add(textField);
 
+		textPane = new JTextPane();
+		textPane.setBounds(10, 22, 410, 180);
+		contentPane.add(textPane);
+		textPane.setBackground(new Color(230, 230, 230));
+
+		sas = new SimpleAttributeSet();
+		StyleConstants.setBold(sas, true);
+		StyleConstants.setItalic(sas, true);
+
+		panelSalas = new JPanel();
+		panelSalas.setBounds(this.getWidth() - 220, 22, this.getWidth() - textPane.getWidth() - 50,
+				this.getHeight() - 130);
+		panelSalas.setLayout(null);
+
+		contentPane.add(panelSalas);
+
+		salaActual = new JLabel("Sala Principal");
+		salaActual.setForeground(Color.BLUE);
+		salaActual.setBounds(10, 10, this.getWidth() - 20, 30);
+		salaActual.setFont(new Font(Font.DIALOG, Font.ITALIC, 15));
+		panelSalas.add(salaActual);
+
+		notificacion = new JLabel();
+		notificacion.setBounds(panelSalas.getWidth() - 40, 10, 25, 25);
+		notificacion.setBackground(Color.red);
+		try {
+			ImageIcon not = new ImageIcon("Utilitarias//not.png");
+
+			Image imagen = not.getImage().getScaledInstance(notificacion.getWidth(), notificacion.getHeight(),
+					Image.SCALE_SMOOTH);
+			notificacion.setIcon(new ImageIcon(imagen));
+
+		} catch (Exception e) {
+			//No se puede cargar la imagen, se cpntinua con la app sin el icono de notificacion
+		}
+		panelSalas.add(notificacion);
+		notificacion.setVisible(false);
+
+		new Thread() {
+			public void run() {
+
+				while (true) {
+					try {
+						Thread.sleep(2000);
+						ServerSocket serv = new ServerSocket(puertoParaControlDeSalas);
+						Socket s = serv.accept();
+						serv.close();
+						DataInputStream d = new DataInputStream(s.getInputStream());
+						Gson gson = new Gson();
+						java.lang.reflect.Type type = new TypeToken<ArrayList<String>>() {
+						}.getType();
+						ArrayList<String> lista = gson.fromJson(d.readUTF(), type);
+
+						int cant1 = listaSalas.size();
+
+						int cant2 = lista.size();
+
+						for (int i = cant1; i < cant2; i++) {
+							listaSalas.add(lista.get(i));
+							salasComboBox.addItem(lista.get(i));
+						}
+
+					} catch (BindException e) {
+						// excepcion causada por tener mas de una ventana abierta en la misma pc
+						try {
+							int rand = (int) (Math.random() * 10000) % 2000;
+							Thread.sleep(rand);
+							// Se trata de impedir que se ejecuten las actualizaciones de salas al mismo
+							// tiempo
+						} catch (InterruptedException e1) {
+							//Excepcion causada por el cierre abrubto de un hilo
+							e1.printStackTrace();
+						}
+					} catch (InterruptedException | IOException e) {
+						e.printStackTrace();
+					}
+				}
+
+			}
+		}.start();
+
+		new Thread() {
+			public void run() {
+				Gson gson = new Gson();
+				while (true) {
+
+					try {
+						Thread.sleep(2000);
+						Socket s = new Socket(ip, puertoParaConexionesActivas);
+						Usuarios paq = new Usuarios(nick, InetAddress.getLocalHost().getHostAddress());
+						paq.setSala(salaActual.getText());
+						DataOutputStream dat = new DataOutputStream(s.getOutputStream());
+
+						String json = gson.toJson(paq);
+						dat.writeUTF(json);
+						s.close();
+
+					} catch (IOException | InterruptedException e) {
+
+					}
+
+				}
+			}
+		}.start();
+
 		btnEnviar = new JButton("Enviar");
 		btnEnviar.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
+
 				send();
 			}
 
@@ -218,89 +277,13 @@ public class ClienteFrame extends JFrame implements Runnable {
 			}
 		});
 
-		textPane = new JTextPane();
-		textPane.setBounds(10, 22, 410, 180);
-		contentPane.add(textPane);
-		textPane.setBackground(new Color(230, 230, 230));
-
-		sas = new SimpleAttributeSet();
-		StyleConstants.setBold(sas, true);
-		StyleConstants.setItalic(sas, true);
-
-		/*
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		*/
-		/// ***************************SALAS****************************//
-
-		// contentPane.add(panelSalas);
-
-		panelSalas = new JPanel();
-		panelSalas.setBounds(this.getWidth() - 220, 22, this.getWidth() - textPane.getWidth() - 50,
-				this.getHeight() - 130);
-		panelSalas.setLayout(null);
-
-		contentPane.add(panelSalas);
-
-		salaActual = new JLabel("Sala General");
-		salaActual.setForeground(Color.BLUE);
-		salaActual.setBounds(25, 10, this.getWidth() - 20, 30);
-		salaActual.setFont(new Font(Font.DIALOG, Font.ITALIC, 15));
-		panelSalas.add(salaActual);
-
-		// panelSalas.add(Box.createRigidArea(new Dimension(0,10)));
-		salasComboBox = new JComboBox<String>() {
-
-			/**
-			 * @inherited
-			 *            <p>
-			 
-			@Override
-			public Dimension getMaximumSize() {
-				Dimension max = super.getMaximumSize();
-				max.height = getPreferredSize().height;
-				return max;
-			}*/
-
-		};
+		salasComboBox = new JComboBox<String>();
 		salasComboBox.setBounds(10, 70, panelSalas.getWidth() - 40, 20);
-		salasComboBox.addItem("Sala Principal");
 		panelSalas.add(salasComboBox);
 
 		nuevaSala = new JButton("Nueva");
-		nuevaSala.setBounds(35, 140, panelSalas.getWidth()/2, 30);
+		nuevaSala.setBounds(10, 140, panelSalas.getWidth() / 2, 30);
 		panelSalas.add(nuevaSala);
-		/*
-		 * panelSalas = new JPanel(); panelSalas.setBounds(this.getWidth() - 220, 22,
-		 * this.getWidth() - textPane.getWidth() - 50, this.getHeight() - 130);
-		 * //panelSalas.setLayout(new BoxLayout(panelSalas, BoxLayout.Y_AXIS));
-		 * panelSalas.setLayout(null);
-		 */
-
-		/*
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		*/
 
 		// *****************************************************************//
 		JScrollPane scrollPane = new JScrollPane(textPane);
@@ -308,50 +291,52 @@ public class ClienteFrame extends JFrame implements Runnable {
 		getContentPane().add(scrollPane);
 		// *****************************************************************//
 
-		
 		salasComboBox.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-		});
-		
-		nuevaSala.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 
-				String nombre=JOptionPane.showInputDialog(null, "Ingrese el nombre de la sala");
-				if(nombre==null)
+				String item = (String) salasComboBox.getSelectedItem();
+				if (!item.equals(salaActual.getText())) {
+					salaActual.setText(item);
+					textPane.setText("");
+				}
+			}
+
+		});
+
+		nuevaSala.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+
+				String nombre = JOptionPane.showInputDialog(null, "Ingrese el nombre de la sala");
+				if (nombre == null)
 					return;
-				Pedido pedido= new Pedido();
+				Pedido pedido = new Pedido();
 				try {
 					pedido.setIp(InetAddress.getLocalHost().getHostAddress());
 				} catch (UnknownHostException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 				pedido.setPedido(Pedido.crearSala);
 				pedido.setUsuario(nick);
-				pedido.setSala(nombre); 
-				Gson gson= new Gson();
-				String json=gson.toJson(pedido);
+				pedido.setSala(nombre);
+				Gson gson = new Gson();
+				String json = gson.toJson(pedido);
 				try {
-					Socket s= new Socket(ip,puertoParaPedidos);
-					DataOutputStream d= new DataOutputStream(s.getOutputStream());
+					Socket s = new Socket(ip, puertoParaPedidos);
+					DataOutputStream d = new DataOutputStream(s.getOutputStream());
 					d.writeUTF(json);
 					s.close();
 				} catch (IOException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
+				salaActual.setText(nombre);
+				textPane.setText("");
 			}
 		});
-		
-		
+
 		imagenDeFondo = new JLabel();
 
 		imagenDeFondo.setBounds(0, 0, 450, 300);
@@ -394,10 +379,6 @@ public class ClienteFrame extends JFrame implements Runnable {
 				panelSalas.setLocation((int) ventana.getWidth() - 220, 22);
 				panelSalas.setSize((int) ventana.getWidth() - textPane.getWidth() - 50,
 						(int) ventana.getHeight() - 130);
-
-				// salaActual.setBounds(panelSalas.getX() + 10, panelSalas.getY() + 10,
-				// panelSalas.getWidth() - 20, 30);
-				// salaActual.setLocation(panelSalas.getX() + 10, panelSalas.getY() + 10);
 
 				imagenDeFondo.setSize(ventana.width, ventana.height);
 
@@ -451,9 +432,20 @@ public class ClienteFrame extends JFrame implements Runnable {
 
 				cliente = new Socket(ip, puetroClienteAServidor);// Trata de conctarse al servidor
 
-				destinatario = new Usuarios(nick, InetAddress.getLocalHost().getHostAddress());
+				Usuarios destinatario = new Usuarios(nick, InetAddress.getLocalHost().getHostAddress());
 				destinatario.setMensaje(cadena);
+				destinatario.setSala(salaActual.getText());
 
+				String prueba = cadena.replaceAll("@[^@]+", "FIND");
+
+				if (prueba.contains("FIND")) {
+					String l = cadena.substring(cadena.indexOf("@"));
+					l = l.substring(0, l.indexOf(" ") == -1 ? l.length() : l.indexOf(" "));
+					destinatario.setNotificarA(l.replace("@", ""));
+				}
+
+				// if(cadena.contains("@[a-z]+"))
+				// System.out.println();
 				Gson gson = new Gson();
 				String json = gson.toJson(destinatario);
 
@@ -491,27 +483,29 @@ public class ClienteFrame extends JFrame implements Runnable {
 	}
 
 	@Override
-	public void run() { // Metodo que estara a la escucha para ver si se reciben mensajes. Es el que
-						// hace que un cliente se comporte como un servidor
-
+	public void run() { 
 		try {
 
-			servidor_cliente = new ServerSocket(puertoServidorACliente); // Crea el puente por el que se va a recibir la
-																			// informacion
+			servidor_cliente = new ServerSocket(puertoServidorACliente); 
 			Gson gson = new Gson();
 			Socket cliente;
 			while (true) {
 
-				cliente = servidor_cliente.accept();// espera que alguien intente establecer coneccion y la acepta.
-													// En
-													// el caso de esta clase el unico que intentara establecer
-													// coneccion
-													// es el servidor Principal
-				DataInputStream flujo_entrada = new DataInputStream(cliente.getInputStream());// Guarda en
-																								// flujo_entrada
+				cliente = servidor_cliente.accept();
+				DataInputStream flujo_entrada = new DataInputStream(cliente.getInputStream());
 				String json = flujo_entrada.readUTF();
 
-				Usuarios entrada = gson.fromJson(json, Usuarios.class);// Lee el mensaje
+				Usuarios entrada = gson.fromJson(json, Usuarios.class);
+
+				if (entrada.getNotificarA() != null && entrada.getNotificarA().equals(nick)) {
+					StyleConstants.setForeground(sas, new Color(129, 63, 154));
+
+					textPane.getStyledDocument().insertString(textPane.getStyledDocument().getLength(),
+							"\nNotificacion(Sala: \"" + entrada.getSala() + "\"): ", sas);
+
+					Toolkit.getDefaultToolkit().beep();
+					notif.start();
+				}
 
 				StyleConstants.setForeground(sas, Color.BLUE);
 
@@ -531,6 +525,5 @@ public class ClienteFrame extends JFrame implements Runnable {
 
 		}
 	}
-
 
 }

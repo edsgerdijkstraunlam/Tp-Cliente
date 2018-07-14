@@ -1,4 +1,4 @@
-package Cliente;
+package dijkstra_unlam.Cliente;
 
 import java.awt.Color;
 import java.awt.Font;

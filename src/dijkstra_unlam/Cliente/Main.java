@@ -1,4 +1,4 @@
-package Cliente;
+package dijkstra_unlam.Cliente;
 
 public class Main {
 	public static void main(String[] args) {
